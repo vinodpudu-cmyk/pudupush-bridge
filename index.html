@@ -6,6 +6,7 @@
   <title>Device Registration - PuduPush</title>
   <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-messaging-compat.js"></script>
 </head>
 <body class="bg-gray-950 text-gray-100 min-h-screen flex items-center justify-center p-4 font-sans">
@@ -31,6 +32,7 @@
         appId: "1:911235507971:web:ff7d4af6210bc59bdf2b36"
     };
     firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore(); // ಗಿಟ್‌ಹಬ್‌ನಲ್ಲೇ ಡೇಟಾಬೇಸ್ ಆನ್ ಮಾಡಲಾಗಿದೆ
 
     let activeAppId = "";
     let domainOrigin = "";
@@ -56,18 +58,25 @@
        messaging.requestPermission()
        .then(() => messaging.getToken({ vapidKey: 'BLfn5T8Dpj_IkWPlEL2w8SdZ49a5LUZFPOeLeMSgGUczW6blLXxdoW4_E6X6aeRMlCM-XnLSxsG52M_IFSw0qtk' }))
        .then((token) => {
-          // ಮಾಸ್ಟರ್ ಮ್ಯಾಜಿಕ್: ಗಿಟ್‌ಹಬ್‌ನಿಂದ ಟೋಕನ್ ಸಿಕ್ಕ ತಕ್ಷಣ ಅದನ್ನು ಹಿನ್ನೆಲೆಯಲ್ಲಿ ಬ್ಲಾಗರ್ ಬ್ಯಾಕೆಂಡ್‌ಗೆ ಕಳುಹಿಸುವುದು
-          const saveUrl = "https://push.onlinepudu.in/p/dashboard.html?mode=direct_save&token=" + token + "&appId=" + activeAppId + "&domain=" + domainOrigin;
-          const imgTrigger = new Image();
-          imgTrigger.src = saveUrl;
+          statusText.innerText = "Saving secure token to cloud...";
           
+          // ಮಾಸ್ಟರ್ ಸ್ಟೆಪ್: ಬ್ಲಾಗರ್ ಗೆ ಕಳುಹಿಸದೆ ನೇರವಾಗಿ ಇಲ್ಲೇ ಫೈರ್ ಬೇಸ್ ಒಳಗೆ ಸೇವ್ ಮಾಡುವುದು
+          return db.collection("push_subscribers").doc(token).set({
+              token: token,
+              appId: activeAppId || "pudu_default",
+              domain: domainOrigin || window.location.hostname,
+              subscribedAt: new Date()
+          });
+       })
+       .then(() => {
           document.getElementById('pudu-direct-grant-btn').style.display = 'none';
           statusText.innerHTML = "<span class='text-green-400 font-black text-sm uppercase block'>🎉 Connection Established!</span>";
           
-          // 2 ಸೆಕೆಂಡ್‌ನಲ್ಲಿ ಪಾಪ್-ಅಪ್ ವಿಂಡೋ ತನ್ನಷ್ಟಕ್ಕೆ ತಾನೇ ಕ್ಲೋಸ್ ಆಗುತ್ತದೆ
-          setTimeout(() => { window.close(); }, 2000);
+          // ಯಶಸ್ವಿಯಾಗಿ ಸೇವ್ ಆದ ತಕ್ಷಣ 1.5 ಸೆಕೆಂಡ್ ನಲ್ಲಿ ವಿಂಡೋ ಕ್ಲೋಸ್ ಆಗುತ್ತದೆ
+          setTimeout(() => { window.close(); }, 1500);
        })
        .catch((err) => {
+           console.error(err);
            statusText.innerHTML = "<span class='text-red-400 font-bold'>Connection Interrupted. Try Again.</span>";
        });
     });
