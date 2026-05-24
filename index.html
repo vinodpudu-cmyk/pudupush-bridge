@@ -34,7 +34,7 @@
     firebase.initializeApp(firebaseConfig);
     const db = firebase.firestore();
 
-    // ವಿಂಡೋ ಹೆಸರಿನಿಂದ ರಹಸ್ಯವಾಗಿ ಬಂದಿರುವ ಡೇಟಾವನ್ನು ಓದುವುದು
+    // ವಿಂಡೋ ಹೆಸರಿನಿಂದ ಡೇಟಾ ಓದುವಿಕೆ
     let activeAppId = "";
     let domainOrigin = "";
 
@@ -45,6 +45,13 @@
        document.getElementById('client-domain').innerText = domainOrigin;
     } else {
        document.getElementById('client-domain').innerText = window.location.hostname;
+    }
+
+    // ಮಾಸ್ಟರ್ ಟ್ರಿಕ್: ಗಿಟ್‌ಹಬ್ ಪೇಜಸ್‌ನಲ್ಲಿ ಸರ್ವಿಸ್ ವರ್ಕರ್ ಅನ್ನು ಬಲವಂತವಾಗಿ ರಿಜಿಸ್ಟರ್ ಮಾಡುವುದು
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('./firebase-messaging-sw.js')
+      .then((reg) => console.log('PuduPush Worker Registered Successfully!', reg))
+      .catch((err) => console.log('Worker Registration Failed: ', err));
     }
 
     document.getElementById('pudu-direct-grant-btn').addEventListener('click', function() {
@@ -69,7 +76,7 @@
        })
        .catch((err) => {
            console.error("Permission Error: ", err);
-           statusText.innerHTML = "<span class='text-red-400 font-bold'>Permission denied by browser.</span>";
+           statusText.innerHTML = "<span class='text-red-400 font-bold'>Permission denied or prompt blocked.</span>";
         });
     });
   </script>
